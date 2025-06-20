@@ -7,14 +7,14 @@ def clean_amount(amount_str, role=None):
     Handle "-" differently based on role:
     - Reviewers: "-" becomes 0 (or null)
     - Approvers: "-" becomes 1
-    """
+    """ 
     if pd.isna(amount_str) or str(amount_str).strip() == '-':
         if role and 'reviewer' in role.lower():
-            return 0  # Reviewers get 0 for "-"
+            return 0 
         else:
-            return 1  # Approvers get 1 for "-"
+            return 1  
     
-    # Remove spaces, commas, and other formatting
+    # Clean up formatting issues
     cleaned = str(amount_str).replace(' ', '').replace(',', '').replace('"', '').strip()
     
     try:
@@ -49,7 +49,7 @@ def transform_sheet_to_oracle(df, sheet_name):
     print(f"{sheet_name} Sheet - First few rows:")
     print(df.head())
     
-    # Try to identify the correct column names based on common patterns
+    # Column Name Identification - Auto-Detection
     cost_center_col = None
     oracle_id_col = None
     threshold_from_col = None
@@ -58,7 +58,7 @@ def transform_sheet_to_oracle(df, sheet_name):
     
     for col in df.columns:
         col_lower = col.lower()
-        if 'cost' in col_lower and 'center' in col_lower:
+        if 'cost' in col_lower and 'center' in col_lower: 
             cost_center_col = col
         elif 'oracle' in col_lower and 'id' in col_lower:
             oracle_id_col = col
@@ -76,13 +76,14 @@ def transform_sheet_to_oracle(df, sheet_name):
     print(f"  Threshold To: {threshold_to_col}")
     print(f"  Role: {role_col}")
     
-    # If we couldn't auto-identify required columns, let user know the available columns
+    # Check if all required columns were identified
+    # If any of the essential columns are missing, we cannot proceed and return None
     if not all([cost_center_col, oracle_id_col, threshold_from_col, threshold_to_col]):
         print(f"\n{sheet_name} Sheet - Could not automatically identify all required columns.")
         print("Available columns:", df.columns.tolist())
         return None
     
-    # Remove rows where essential columns are empty
+    # Check if row does not contain a Cost Center or Oracle ID
     df = df.dropna(subset=[cost_center_col, oracle_id_col], how='all')
     
     # Create list to store transformed rows
@@ -113,13 +114,13 @@ def transform_sheet_to_oracle(df, sheet_name):
             if threshold_from == 0 and threshold_to == 0:
                 new_row = {
                     'Cost Center': cost_center,
-                    'Level': 1,  # Reviewers typically get level 1
+                    'Level': '',
                     'Type': 'Employee',
                     'Role': 'REVIEWER',
                     'Oracle ID': oracle_id,
-                    'Threshold Amount From': 0,
-                    'Threshold Amount To': 0
-                }
+                    'Threshold Amount From': '',
+                    'Threshold Amount To': ''
+                } 
                 transformed_rows.append(new_row)
                 print(f"  Added reviewer entry: 0 - 0")
             else:
@@ -141,7 +142,7 @@ def transform_sheet_to_oracle(df, sheet_name):
                         transformed_rows.append(new_row)
                         print(f"  Added reviewer level {level_info['level']}: {range_start} - {range_end}")
         else:
-            # For approvers - existing logic
+            # For approvers determine the threshold range
             # Check if this is a full range case (from 1 to very high amount)
             is_full_range = (
                 threshold_from == 1 and threshold_to >= 99999999
