@@ -31,7 +31,7 @@ def transform_sheet_to_oracle(df, sheet_name):
     Transform a single sheet's data to Oracle format
     """
     
-    # Define the approval level thresholds
+    # Approval level thresholds
     approval_levels = [
         {"level": 1, "amount_from": 1, "amount_to": 1000.99},
         {"level": 2, "amount_from": 1001.00, "amount_to": 5000.99},
@@ -42,7 +42,7 @@ def transform_sheet_to_oracle(df, sheet_name):
         {"level": 7, "amount_from": 1000001.00, "amount_to": 99999999.99}
     ]
     
-    # Clean column names (remove extra spaces)
+    # Clean column names
     df.columns = df.columns.str.strip()
     
     print(f"\n{sheet_name} Sheet - Column names found:", df.columns.tolist())
@@ -102,6 +102,8 @@ def transform_sheet_to_oracle(df, sheet_name):
         # Skip rows with missing essential data
         if pd.isna(cost_center) or pd.isna(oracle_id):
             continue
+            
+        print(f"{sheet_name} - Processing: Cost Center={cost_center}, Oracle ID={oracle_id}, Role={role}, From={threshold_from}, To={threshold_to}")
         
         # Determine if this person is a reviewer or approver
         is_reviewer = role and 'reviewer' in str(role).lower()
@@ -119,6 +121,7 @@ def transform_sheet_to_oracle(df, sheet_name):
                     'Threshold Amount To': 0
                 }
                 transformed_rows.append(new_row)
+                print(f"  Added reviewer entry: 0 - 0")
             else:
                 # For reviewers with specific thresholds, map to appropriate levels
                 for level_info in approval_levels:
@@ -136,6 +139,7 @@ def transform_sheet_to_oracle(df, sheet_name):
                             'Threshold Amount To': range_end
                         }
                         transformed_rows.append(new_row)
+                        print(f"  Added reviewer level {level_info['level']}: {range_start} - {range_end}")
         else:
             # For approvers - existing logic
             # Check if this is a full range case (from 1 to very high amount)
@@ -156,6 +160,7 @@ def transform_sheet_to_oracle(df, sheet_name):
                         'Threshold Amount To': level_info['amount_to']
                     }
                     transformed_rows.append(new_row)
+                    print(f"  Added approver level {level_info['level']}: {level_info['amount_from']} - {level_info['amount_to']}")
             else:
                 # For specific ranges, determine which level(s) they fall into
                 for level_info in approval_levels:
@@ -174,6 +179,7 @@ def transform_sheet_to_oracle(df, sheet_name):
                             'Threshold Amount To': range_end
                         }
                         transformed_rows.append(new_row)
+                        print(f"  Added approver level {level_info['level']}: {range_start} - {range_end}")
     
     # Create DataFrame from transformed rows
     result_df = pd.DataFrame(transformed_rows)
@@ -309,10 +315,13 @@ if __name__ == "__main__":
             print("Files created:")
             print("  - Oracle_Import_General.xlsx")
             print("  - Oracle_Import_Research.xlsx")
+            print("\nRole handling:")
+            print("  - Reviewers: '-' converted to 0")
+            print("  - Approvers: '-' converted to 1")
         else:
             print("Transformation failed. Please check the error messages above.")
         
-    except FileNotFoundError: 
+    except FileNotFoundError:
         print(f"Error: Could not find {input_filename}")
         print("Please make sure your Excel file is in the same directory as this script.")
     except Exception as e:
