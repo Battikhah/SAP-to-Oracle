@@ -20,17 +20,13 @@ def clean_amount(amount_str, role=None):
     try:
         return float(cleaned)
     except ValueError:
-        # If can't parse, use same logic as "-"
         if role and 'reviewer' in role.lower():
             return 0
         else:
             return 1
 
 def transform_sheet_to_oracle(df, sheet_name):
-    """
-    Transform a single sheet's data to Oracle format
-    """
-    
+    # Transform a single sheet's data to Oracle format
     # Approval level thresholds
     approval_levels = [
         {"level": 1, "amount_from": 1, "amount_to": 1000.99},
@@ -296,7 +292,7 @@ def preview_transformation(input_file, num_rows=3):
 # Example usage
 if __name__ == "__main__":
     # Use your actual Excel file
-    input_filename = "Raw Data.xlsx"
+    input_filename = "Files/Raw Data.xlsx"
     
     try:
         # Preview the transformation first
